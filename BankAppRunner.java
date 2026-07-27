@@ -37,7 +37,7 @@ public class BankAppRunner {
 
    static {
       sc = new Scanner(System.in);
-      map = new HashMap();
+      map = new HashMap<String, String>();
       map.put("admin", "admin123");
       map.put("user2", "pass2");
       map.put("user1", "pass1");
