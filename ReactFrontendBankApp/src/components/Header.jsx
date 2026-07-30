@@ -32,6 +32,12 @@ function Header() {
             Services
           </NavLink>
           <NavLink
+            to="/register"
+            className={({ isActive }) => (isActive ? "active" : "")}
+          >
+            Register
+          </NavLink>
+          <NavLink
             to="/login"
             className={({ isActive }) => (isActive ? "active" : "")}
           >

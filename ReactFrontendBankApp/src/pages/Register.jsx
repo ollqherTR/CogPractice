@@ -1,7 +1,7 @@
 import { useState } from "react";
 import api from "../services/api";
 
-function Login() {
+function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -14,25 +14,23 @@ function Login() {
     setMessage("");
 
     if (!username.trim() || !password.trim()) {
-      setError("Please enter username and password.");
+      setError("Please enter a valid username and password.");
       return;
     }
 
     try {
       setLoading(true);
-      const response = await api.post("/api/auth/login", {
+      const response = await api.post("/api/auth/register", {
         username,
         password,
       });
 
-      const token = response.data.token;
-      localStorage.setItem("token", token);
-      setMessage(response.data.message || "Login successful.");
+      setMessage(response.data.message || "Registration successful.");
       setUsername("");
       setPassword("");
     } catch (err) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again.",
+        err.response?.data?.message || "Registration failed. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -43,8 +41,8 @@ function Login() {
     <section className="page-section auth-page">
       <div className="container small-container">
         <div className="page-heading">
-          <h1>Login</h1>
-          <p>Enter your credentials to authenticate against the backend.</p>
+          <h1>Register</h1>
+          <p>Create a new account to access the bank dashboard.</p>
         </div>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
@@ -66,7 +64,7 @@ function Login() {
             />
           </label>
           <button type="submit" className="button-primary" disabled={loading}>
-            {loading ? "Signing in..." : "Login"}
+            {loading ? "Creating account..." : "Register"}
           </button>
         </form>
         {message && (
@@ -78,4 +76,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Register;

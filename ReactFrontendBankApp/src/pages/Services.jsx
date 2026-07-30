@@ -12,7 +12,7 @@ function Services() {
       setError(null);
 
       try {
-        const response = await api.get("/customers");
+        const response = await api.get("/api/v1/customers");
         setCustomers(response.data || []);
       } catch (e) {
         setError("Unable to load customer data. Please try again later.");
