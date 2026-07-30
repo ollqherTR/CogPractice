@@ -1,10 +1,18 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const authMiddleware = require("./middleware/auth");
+const authRoutes = require("./routes/authRoutes");
+const Customer = require("./models/Customer");
 require("dotenv").config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+if (!process.env.JWT_SECRET) {
+  console.error("Missing JWT_SECRET in .env");
+  process.exit(1);
+}
 
 app.use(cors());
 app.use(express.json());
@@ -14,32 +22,7 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
-// Customer Schema
-const customerSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  checkingBalance: {
-    type: Number,
-    default: 0,
-  },
-  savingsBalance: {
-    type: Number,
-    default: 0,
-  },
-  transactions: {
-    type: [String],
-    default: [],
-  },
-});
-
-const Customer = mongoose.model("Customer", customerSchema);
+app.use("/api/auth", authRoutes);
 
 // Home
 app.get("/", (req, res) => {
@@ -57,7 +40,7 @@ app.get("/api/v1/health", (req, res) => {
 });
 
 // Get All Customers
-app.get("/api/v1/customers", async (req, res) => {
+app.get("/api/v1/customers", authMiddleware, async (req, res) => {
   try {
     const customers = await Customer.find();
     res.json(customers);
@@ -69,7 +52,7 @@ app.get("/api/v1/customers", async (req, res) => {
 });
 
 // Get Customer By Username
-app.get("/api/v1/customers/:username", async (req, res) => {
+app.get("/api/v1/customers/:username", authMiddleware, async (req, res) => {
   try {
     const customer = await Customer.findOne({
       username: req.params.username.toLowerCase(),
@@ -90,7 +73,7 @@ app.get("/api/v1/customers/:username", async (req, res) => {
 });
 
 // Create Customer
-app.post("/api/v1/customers", async (req, res) => {
+app.post("/api/v1/customers", authMiddleware, async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -132,7 +115,7 @@ app.post("/api/v1/customers", async (req, res) => {
 });
 
 // Update Customer
-app.put("/api/v1/customers/:username", async (req, res) => {
+app.put("/api/v1/customers/:username", authMiddleware, async (req, res) => {
   try {
     const customer = await Customer.findOne({
       username: req.params.username.toLowerCase(),
@@ -166,53 +149,57 @@ app.put("/api/v1/customers/:username", async (req, res) => {
 });
 
 // Deposit Money
-app.post("/api/v1/customers/:username/deposit", async (req, res) => {
-  try {
-    const { amount, account } = req.body;
+app.post(
+  "/api/v1/customers/:username/deposit",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const { amount, account } = req.body;
 
-    const customer = await Customer.findOne({
-      username: req.params.username.toLowerCase(),
-    });
+      const customer = await Customer.findOne({
+        username: req.params.username.toLowerCase(),
+      });
 
-    if (!customer) {
-      return res.status(404).json({
-        message: "Customer not found",
+      if (!customer) {
+        return res.status(404).json({
+          message: "Customer not found",
+        });
+      }
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({
+          message: "Invalid amount",
+        });
+      }
+
+      if (account === "checking") {
+        customer.checkingBalance += amount;
+      } else if (account === "savings") {
+        customer.savingsBalance += amount;
+      } else {
+        return res.status(400).json({
+          message: "Account must be checking or savings",
+        });
+      }
+
+      customer.transactions.push(`Deposited $${amount}`);
+
+      await customer.save();
+
+      res.json({
+        message: "Deposit successful",
+        customer,
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: err.message,
       });
     }
-
-    if (!amount || amount <= 0) {
-      return res.status(400).json({
-        message: "Invalid amount",
-      });
-    }
-
-    if (account === "checking") {
-      customer.checkingBalance += amount;
-    } else if (account === "savings") {
-      customer.savingsBalance += amount;
-    } else {
-      return res.status(400).json({
-        message: "Account must be checking or savings",
-      });
-    }
-
-    customer.transactions.push(`Deposited $${amount}`);
-
-    await customer.save();
-
-    res.json({
-      message: "Deposit successful",
-      customer,
-    });
-  } catch (err) {
-    res.status(500).json({
-      message: err.message,
-    });
-  }
-});
+  },
+);
 
 // Delete Customer
-app.delete("/api/v1/customers/:username", async (req, res) => {
+app.delete("/api/v1/customers/:username", authMiddleware, async (req, res) => {
   try {
     const customer = await Customer.findOneAndDelete({
       username: req.params.username.toLowerCase(),
