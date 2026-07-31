@@ -1,6 +1,21 @@
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 function Header() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem("token"));
+  }, [location]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    navigate("/login", { replace: true });
+  };
+
   return (
     <header className="site-header">
       <div className="container">
@@ -25,24 +40,34 @@ function Header() {
           >
             Contact
           </NavLink>
-          <NavLink
-            to="/services"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Services
-          </NavLink>
-          <NavLink
-            to="/register"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Register
-          </NavLink>
-          <NavLink
-            to="/login"
-            className={({ isActive }) => (isActive ? "active" : "")}
-          >
-            Login
-          </NavLink>
+          {isLoggedIn ? (
+            <>
+              <NavLink
+                to="/services"
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                Services
+              </NavLink>
+              <button className="button-secondary" onClick={handleLogout}>
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink
+                to="/register"
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                Register
+              </NavLink>
+              <NavLink
+                to="/login"
+                className={({ isActive }) => (isActive ? "active" : "")}
+              >
+                Login
+              </NavLink>
+            </>
+          )}
         </nav>
       </div>
     </header>

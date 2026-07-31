@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 function Login() {
@@ -7,6 +8,9 @@ function Login() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/services";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -27,9 +31,7 @@ function Login() {
 
       const token = response.data.token;
       localStorage.setItem("token", token);
-      setMessage(response.data.message || "Login successful.");
-      setUsername("");
-      setPassword("");
+      navigate(from, { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message || "Login failed. Please try again.",
